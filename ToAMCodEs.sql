@@ -119,3 +119,33 @@ FROM
     ranked_countries
 ORDER BY 
     rank_par_country; -- Tri par classement des pays
+
+
+-- -- Requête 4 : les délais de livraison 
+WITH order_details AS (
+    SELECT
+        orders.status, -- Statut de la commande (par exemple : Shipped, On Hold, etc.)
+        orders.orderNumber, -- Numéro unique de la commande
+        orderdetails.productCode, -- Code du produit inclus dans la commande
+        orders.requiredDate, -- Date requise pour la livraison
+        orders.orderDate, -- Date à laquelle la commande a été passée
+        orders.shippedDate, -- Date à laquelle la commande a été expédiée
+        orders.comments, -- Commentaires associés à la commande
+        DATEDIFF(orders.shippedDate, orders.orderDate) AS delais_de_livraison -- Calcul de la durée en jours entre la commande et l'expédition
+    FROM 
+        orderdetails 
+    LEFT JOIN 
+        orders ON orders.orderNumber = orderdetails.orderNumber -- Jointure pour associer les détails de commande aux commandes principales
+)
+
+-- Étape 2 : Filtrer les commandes avec des délais de livraison > 6 jours et regrouper par statut
+SELECT 
+    status, -- Le statut de la commande (par exemple : Shipped, On Hold, etc.)
+    COUNT(orderNumber) AS total_orders_delayed -- Nombre total de commandes avec un délai supérieur à 6 jours
+FROM 
+    order_details -- Utilisation de la CTE définie ci-dessus
+WHERE 
+    delais_de_livraison > 6 -- Filtrer uniquement les commandes avec des délais supérieurs à 6 jours
+GROUP BY 
+    status; -- Regrouper les résultats par statut des commandes
+
